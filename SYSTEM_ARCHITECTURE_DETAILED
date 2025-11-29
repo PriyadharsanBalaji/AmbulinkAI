@@ -1,0 +1,695 @@
+# AMBULINK AI - DETAILED SYSTEM ARCHITECTURE
+# Visual Reference and Technical Specifications
+
+## 🏗️ SYSTEM ARCHITECTURE DIAGRAM
+
+```
+═══════════════════════════════════════════════════════════════════════════════
+
+                         AMBULINK AI ECOSYSTEM
+
+═══════════════════════════════════════════════════════════════════════════════
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                        PRESENTATION LAYER                                 ┃
+┃                                                                            ┃
+┃  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────┐┃
+┃  │  Hospital Dashboard  │  │   Physician App      │  │   Paramedic App  ││
+┃  │   (React.js)         │  │  (React Native)      │  │ (React Native)   ││
+┃  │                      │  │                      │  │                  ││
+┃  │ • Real-time alerts   │  │ • Push notifications │  │ • Patient intake ││
+┃  │ • Patient queue      │  │ • Pre-generated rec. │  │ • Vitals capture ││
+┃  │ • Metrics dashboard  │  │ • Telemetry display  │  │ • GPS tracking   ││
+┃  │ • Resource mgmt      │  │ • Team chat          │  │ • Offline-first  ││
+┃  │ • Bed management     │  │ • Alert workflow     │  │ • Auto-sync      ││
+┃  └──────────────────────┘  └──────────────────────┘  └──────────────────┘┃
+┃         │                          │                        │             ┃
+┗━━━━━━━━━┃━━━━━━━━━━━━━━━━━━━━━━━━┃━━━━━━━━━━━━━━━━━━━━━┃━━━━━━━━━━━━┛
+          │ WebSocket                │ WebSocket              │ HTTP/HTTPS
+          │ Socket.IO                │ Socket.IO              │ REST API
+          │ (Real-time)              │ (Real-time)            │
+          │                          │                        │
+┏━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━┓
+┃                       API GATEWAY LAYER                                  ┃
+┃                                                                          ┃
+┃  ┌─────────────────────────────────────────────────────────────────┐  ┃
+┃  │ Nginx Reverse Proxy / Load Balancer                             │  ┃
+┃  │ • Request routing                                               │  ┃
+┃  │ • SSL/TLS termination                                           │  ┃
+┃  │ • Rate limiting & DDoS protection                               │  ┃
+┃  │ • CORS handling                                                 │  ┃
+┃  └─────────────────────────────────────────────────────────────────┘  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┬━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                               │
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃                      APPLICATION LAYER                               ┃
+┃                    (Python/Flask Backend)                            ┃
+┃                                                                      ┃
+┃  ┌──────────────────────────────────────────────────────────────┐  ┃
+┃  │ REST API Layer (Flask Blueprint)                             │  ┃
+┃  │                                                              │  ┃
+┃  │  Routes:                                                     │  ┃
+┃  │  • /api/auth/login - User authentication                    │  ┃
+┃  │  • /api/patients - Patient CRUD operations                  │  ┃
+┃  │  • /api/patients/*/vitals - Real-time vitals updates        │  ┃
+┃  │  • /api/hospitals/*/alerts - Hospital alerts                │  ┃
+┃  │  • /api/records - Patient records                            │  ┃
+┃  │  • /api/audit-logs - Compliance audit                       │  ┃
+┃  │                                                              │  ┃
+┃  └──────────────────────────────────────────────────────────────┘  ┃
+┃                                   │                                  ┃
+┃  ┌────────────────────────────────┼────────────────────────────┐   ┃
+┃  │                                │                            │   ┃
+┃  ▼                                ▼                            ▼   ┃
+┃  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ ┃
+┃  │ Business Logic   │  │   ML/AI Module   │  │   Security/HIPAA │ ┃
+┃  │   (Services)     │  │                  │  │      Module      │ ┃
+┃  │                  │  │ • Triage Model   │  │                  │ ┃
+┃  │ • Patient mgmt   │  │ • Clinical NLP   │  │ • Encryption     │ ┃
+┃  │ • Alert dispatch │  │ • Risk scoring   │  │ • Auth/JWT       │ ┃
+┃  │ • Hospital ops   │  │ • EHR generation │  │ • RBAC           │ ┃
+┃  │ • Data transform │  │                  │  │ • Audit logging  │ ┃
+┃  └──────────────────┘  └──────────────────┘  └──────────────────┘ ┃
+┃                                   │                                  ┃
+┃  ┌────────────────────────────────┼────────────────────────────┐   ┃
+┃  │                                                             │   ┃
+┃  ▼                                ▼                            ▼   ┃
+┃  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐ ┃
+┃  │  Real-time Comm  │  │   WebSocket      │  │   Background     │ ┃
+┃  │   (Socket.IO)    │  │    Handler       │  │   Workers        │ ┃
+┃  │                  │  │                  │  │                  │ ┃
+┃  │ • Alerts         │  │ • New alerts     │  │ • Sync queue     │ ┃
+┃  │ • Vitals stream  │  │ • Vitals update  │  │ • EHR generation │ ┃
+┃  │ • Notifications  │  │ • Chat messages  │  │ • Notifications  │ ┃
+┃  │ • Live updates   │  │                  │  │                  │ ┃
+┃  └──────────────────┘  └──────────────────┘  └──────────────────┘ ┃
+┃                                                                      ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┬━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+                              │
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┏━━━━━━━━━━━━━━━━┓  ┏━━━━━━━━━━━━━━━━┓  ┏━━━━━━━━━━━━━━━━┓
+┃    DATABASE    ┃  ┃  CACHE LAYER   ┃  ┃  MESSAGE QUEUE ┃
+┃   (PostgreSQL) ┃  ┃  (Redis)       ┃  ┃  (Bull/Celery) ┃
+┃                ┃  ┃                ┃  ┃                ┃
+┃ Tables:        ┃  ┃ • Sessions     ┃  ┃ • Task queue   ┃
+┃ • users        ┃  ┃ • Cached data  ┃  ┃ • Async jobs   ┃
+┃ • patients     ┃  ┃ • Rate limits  ┃  ┃ • Notifications┃
+┃ • hospitals    ┃  ┃ • ML models    ┃  ┃                ┃
+┃ • alerts       ┃  ┃                ┃  ┃                ┃
+┃ • records      ┃  ┃                ┃  ┃                ┃
+┃ • audit_logs   ┃  ┃                ┃  ┃                ┃
+┃                ┃  ┃                ┃  ┃                ┃
+┃ Encryption:    ┃  ┃                ┃  ┃                ┃
+┃ • AES-256      ┃  ┃                ┃  ┃                ┃
+┃ • TLS 1.3      ┃  ┃                ┃  ┃                ┃
+┃ • Fernet       ┃  ┃                ┃  ┃                ┃
+┗━━━━━━━━━━━━━━━━┛  ┗━━━━━━━━━━━━━━━━┛  ┗━━━━━━━━━━━━━━━━┛
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🔄 DATA FLOW DIAGRAM
+
+```
+PATIENT ARRIVAL FLOW:
+
+1. Paramedic Input
+   ├─ Demographics (name, age, gender, blood type)
+   ├─ Medical history (allergies, medications, conditions)
+   ├─ Chief complaint
+   ├─ Vital signs (HR, BP, O2, Temp, RR)
+   ├─ Location (GPS coordinates)
+   └─ Destination hospital
+
+2. Data Validation
+   ├─ Field validation (required fields)
+   ├─ Type validation (numeric, string, etc.)
+   ├─ Range validation (HR 40-200 bpm, etc.)
+   └─ De-duplication check
+
+3. Encryption
+   ├─ Sensitive data (demographics) → AES-256
+   ├─ Medical history → Encrypted storage
+   └─ Transportation → TLS 1.3
+
+4. AI/ML Processing
+   ├─ Triage Classification
+   │  └─ Input: Vitals + history → ESI-5 score
+   ├─ Clinical NLP
+   │  └─ Extract: Conditions, symptoms, medications
+   └─ Risk Scoring
+      └─ Output: Mortality, ICU admission probability
+
+5. Record Generation
+   ├─ Parse clinical notes
+   ├─ Convert to ICD-10 codes
+   ├─ Generate structured EHR
+   └─ Estimate confidence score
+
+6. Hospital Notification
+   ├─ Create alert record
+   ├─ Determine severity (ESI-1→ESI-5)
+   ├─ Route to appropriate departments
+   └─ Broadcast via WebSocket
+
+7. Physician Alert
+   ├─ Real-time notification
+   ├─ Pre-generated record display
+   ├─ Team notification
+   └─ Resource mobilization
+
+8. Audit Logging
+   ├─ User ID logged
+   ├─ Timestamp recorded
+   ├─ Action documented
+   └─ IP address captured
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 📊 DATABASE SCHEMA
+
+```
+DATABASE: ambulink_db
+
+TABLES:
+
+1. users
+   ├─ id (PK)
+   ├─ username (UNIQUE)
+   ├─ email (UNIQUE)
+   ├─ password_hash
+   ├─ role (paramedic, physician, admin)
+   ├─ hospital_id (FK)
+   ├─ ambulance_id
+   ├─ is_active
+   ├─ created_at
+   └─ updated_at
+
+2. patients
+   ├─ id (PK)
+   ├─ patient_id (UNIQUE) - PAT-XXXXX
+   ├─ _demographics (ENCRYPTED) - JSON
+   ├─ _medical_history (ENCRYPTED) - JSON
+   ├─ heart_rate
+   ├─ blood_pressure
+   ├─ oxygen_saturation
+   ├─ temperature
+   ├─ respiratory_rate
+   ├─ chief_complaint
+   ├─ triage_level - ESI 1-5
+   ├─ risk_score (0-100)
+   ├─ ambulance_id
+   ├─ origin_latitude
+   ├─ origin_longitude
+   ├─ destination_hospital_id (FK)
+   ├─ estimated_arrival
+   ├─ created_at (INDEX)
+   └─ updated_at
+
+3. hospitals
+   ├─ id (PK)
+   ├─ name
+   ├─ latitude
+   ├─ longitude
+   ├─ specialties (JSON array)
+   ├─ bed_capacity
+   ├─ current_occupancy
+   └─ is_active
+
+4. alerts
+   ├─ id (PK)
+   ├─ alert_id (UNIQUE) - ALR-XXXXX
+   ├─ patient_id (FK, INDEX)
+   ├─ hospital_id (FK)
+   ├─ alert_type - patient_arrival, high_risk, critical
+   ├─ severity - critical, high, medium, low
+   ├─ message
+   ├─ department
+   ├─ is_acknowledged
+   ├─ acknowledged_by (FK)
+   ├─ acknowledged_at
+   ├─ created_at (INDEX)
+   └─ updated_at
+
+5. patient_records
+   ├─ id (PK)
+   ├─ patient_id (FK, INDEX)
+   ├─ record_number (UNIQUE) - MRN
+   ├─ _record_content (ENCRYPTED)
+   ├─ generated_by_ai
+   ├─ confidence_score (0-1)
+   ├─ reviewed_by (FK)
+   ├─ is_finalized
+   ├─ created_at
+   └─ updated_at
+
+6. audit_logs (HIPAA REQUIRED)
+   ├─ id (PK)
+   ├─ user_id (FK, INDEX)
+   ├─ action - READ, WRITE, DELETE, EXPORT
+   ├─ resource_type - patient, alert, record
+   ├─ resource_id
+   ├─ ip_address
+   ├─ status - success, denied, error
+   ├─ details (JSON)
+   ├─ timestamp (INDEX)
+   └─ [Retention: 6+ years]
+
+INDEXES:
+- users(username, email)
+- patients(patient_id, ambulance_id, created_at)
+- alerts(patient_id, hospital_id, created_at)
+- audit_logs(user_id, timestamp)
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🔐 SECURITY ARCHITECTURE
+
+```
+SECURITY LAYERS:
+
+┌────────────────────────────────────────────────────────────┐
+│ 1. TRANSPORT LAYER SECURITY                                │
+│    • TLS 1.3 with ECDHE                                    │
+│    • Certificate pinning (mobile)                          │
+│    • HSTS headers                                          │
+│    • OCSP stapling                                         │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 2. APPLICATION LAYER SECURITY                              │
+│    • OAuth 2.0 + OpenID Connect                            │
+│    • JWT tokens (1 hour expiry)                            │
+│    • Refresh token rotation                                │
+│    • Rate limiting (100 req/min per user)                  │
+│    • CSRF protection (double-submit cookie)                │
+│    • Input validation & sanitization                       │
+│    • SQL injection prevention (parameterized queries)      │
+│    • XSS protection (CSP headers)                          │
+│    • CORS configuration (origin whitelist)                 │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 3. DATA ENCRYPTION                                         │
+│    • At Rest: AES-256-GCM (Fernet)                        │
+│    • In Transit: TLS 1.3 (mandatory)                       │
+│    • Key Management: AWS KMS / Azure Key Vault             │
+│    • Key Rotation: Every 90 days                           │
+│    • Sensitive Fields: demographics, medical_history       │
+│    • Audit Trail: Encrypted before storage                 │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 4. ACCESS CONTROL                                          │
+│    • RBAC: paramedic, physician, admin, manager            │
+│    • Field-level access control                            │
+│    • Resource-based access control                         │
+│    • Data segregation per hospital                         │
+│    • Minimum privilege principle                           │
+│    • MFA for sensitive operations                          │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 5. AUDIT & LOGGING                                         │
+│    • All PHI access logged (user, action, time, result)    │
+│    • Immutable audit trail (append-only)                   │
+│    • Real-time breach detection                            │
+│    • Logs encrypted at rest                                │
+│    • Retention: 6+ years                                   │
+│    • Regular audit reviews (monthly)                       │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│ 6. INFRASTRUCTURE SECURITY                                 │
+│    • VPC isolation (private subnets)                       │
+│    • Network segmentation (security groups)                │
+│    • WAF rules (AWS WAF / Azure)                           │
+│    • DDoS protection (AWS Shield / Azure)                  │
+│    • Regular security patching                             │
+│    • Vulnerability scanning (weekly)                       │
+│    • Penetration testing (quarterly)                       │
+│    • Intrusion detection (IDS)                             │
+└────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🤖 AI/ML PIPELINE
+
+```
+TRIAGE MODEL (RandomForest):
+├─ Input Features:
+│  ├─ age (0-120)
+│  ├─ heart_rate (40-200 bpm)
+│  ├─ bp_systolic (50-250 mmHg)
+│  ├─ bp_diastolic (30-150 mmHg)
+│  ├─ oxygen_saturation (60-100%)
+│  ├─ respiratory_rate (4-50 breaths/min)
+│  └─ temperature (32-42°C)
+│
+├─ Model Type: RandomForestClassifier
+│  ├─ n_estimators: 100
+│  ├─ max_depth: 10
+│  └─ min_samples_leaf: 5
+│
+├─ Output: ESI Level (1-5)
+│  ├─ ESI-1: Immediate resuscitation (high-risk)
+│  ├─ ESI-2: High-risk situations
+│  ├─ ESI-3: Moderate complexity / stable
+│  ├─ ESI-4: Minor problems
+│  └─ ESI-5: Resource-minimal
+│
+└─ Performance Target:
+   ├─ Accuracy: > 90%
+   ├─ Sensitivity: > 95%
+   ├─ Specificity: > 85%
+   └─ F1-Score: > 0.90
+
+CLINICAL NLP (spaCy + BioBERT):
+├─ Tasks:
+│  ├─ Entity Recognition (symptoms, conditions, medications)
+│  ├─ Relationship Extraction (allergy to medication)
+│  ├─ Text Classification (chief complaint categorization)
+│  └─ Normalization (ICD-10 coding)
+│
+├─ Training Data: Clinical notes corpus
+│  ├─ 100,000+ annotated clinical notes
+│  ├─ Multiple specialties (ED, cardiology, trauma, etc.)
+│  └─ Balanced for condition distribution
+│
+├─ Output: Structured Clinical Data
+│  ├─ Symptoms (confidence scores)
+│  ├─ Conditions (ICD-10 codes)
+│  ├─ Medications (mapped names)
+│  ├─ Allergies (extracted entities)
+│  └─ Risk factors (identified)
+│
+└─ Performance Target:
+   ├─ NER F1-Score: > 0.92
+   ├─ Extraction accuracy: > 95%
+   └─ Code accuracy: > 98%
+
+RISK PREDICTION MODEL:
+├─ Target Variables:
+│  ├─ Mortality risk (%)
+│  ├─ ICU admission probability (%)
+│  └─ 30-day readmission risk (%)
+│
+├─ Features:
+│  ├─ Demographics (age, gender)
+│  ├─ Vitals (current status)
+│  ├─ Medical history (chronic conditions)
+│  ├─ Medications (current therapy)
+│  ├─ Chief complaint (severity)
+│  └─ Triage level
+│
+├─ Model: Gradient Boosting (LightGBM)
+│  ├─ Training: 50,000+ patient records
+│  ├─ Validation: Cross-validation (5-fold)
+│  └─ Testing: Independent test set (20%)
+│
+└─ Performance Target:
+   ├─ AUC-ROC: > 0.92
+   ├─ Precision: > 0.90
+   └─ Recall: > 0.88
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🚀 DEPLOYMENT ARCHITECTURE
+
+```
+AWS DEPLOYMENT:
+
+┌──────────────────────────────────────────────────────────────┐
+│ CDN & DNS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│ • CloudFront (CDN)                                           │
+│ • Route 53 (DNS) with health checks                         │
+└────────────────┬─────────────────────────────────────────────┘
+                 │
+┌────────────────┻─────────────────────────────────────────────┐
+│ Load Balancing                                               │
+├──────────────────────────────────────────────────────────────┤
+│ • Application Load Balancer (ALB)                            │
+│ • Network Load Balancer (NLB) for WebSocket                  │
+│ • SSL/TLS termination (ACM)                                  │
+│ • Connection draining (30 sec)                               │
+└────────────────┬─────────────────────────────────────────────┘
+                 │
+    ┌────────────┴────────────┬────────────┐
+    │                         │            │
+    ▼                         ▼            ▼
+┌─────────────┐       ┌─────────────┐  ┌─────────────┐
+│ ECS/EKS     │       │ RDS Instance│  │ ElastiCache │
+│ Cluster     │       │ (PostgreSQL)│  │ (Redis)     │
+│             │       │             │  │             │
+│ Backend:    │       │ Multi-AZ    │  │ Multi-node  │
+│ • 3+ tasks  │       │ Backup      │  │ Cluster     │
+│ • Auto-scal │       │ Replication │  │             │
+│ • Health    │       │ 1TB storage │  │ 256GB cache │
+│   checks    │       │             │  │             │
+└─────────────┘       └─────────────┘  └─────────────┘
+                             │
+                      ┌──────┴──────┐
+                      │             │
+                      ▼             ▼
+                   S3 Backup  CloudWatch
+                   (daily)    (monitoring)
+
+
+AUTO-SCALING:
+├─ CPU Threshold: Scale up at 70%, down at 30%
+├─ Memory Threshold: Scale up at 75%, down at 35%
+├─ Request Count: Scale up at 1000 req/min
+└─ Min Instances: 3, Max Instances: 20
+
+
+BACKUP & RECOVERY:
+├─ Database Backup: Daily automated (S3)
+├─ RTO: 15 minutes
+├─ RPO: 1 hour
+├─ Multi-region replication
+└─ Tested recovery procedures (quarterly)
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 📱 MOBILE ARCHITECTURE
+
+```
+REACT NATIVE OFFLINE-FIRST ARCHITECTURE:
+
+┌─────────────────────────────────────────┐
+│ UI Layer (React Components)              │
+├─────────────────────────────────────────┤
+│ • Patient Intake Form                   │
+│ • Vitals Input Screen                   │
+│ • Chief Complaint Screen                │
+│ • Location & Hospital Selection         │
+│ • Status & Sync Indicators              │
+└────────────────┬────────────────────────┘
+                 │
+┌────────────────┻────────────────────────┐
+│ State Management (Redux/Context)        │
+├─────────────────────────────────────────┤
+│ • Reducer: formData, syncStatus         │
+│ • Actions: updateField, submit, sync    │
+│ • Middleware: logging, async            │
+└────────────────┬────────────────────────┘
+                 │
+    ┌────────────┼────────────┐
+    │            │            │
+    ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌──────────┐
+│ Network │  │ Location│  │AsyncStore│
+│ Manager │  │ Service │  │(offline) │
+│         │  │         │  │          │
+│Network  │  │GPS      │  │IndexedDB │
+│status   │  │tracking │  │SQLite    │
+│Online   │  │Real-time│  │Local dat │
+│Offline  │  │updates  │  │Queue     │
+└─────────┘  └─────────┘  └──────────┘
+                 │            │
+                 └────────────┬────────────┐
+                              │            │
+        ┌─────────────────────┘            │
+        │                                  │
+        ▼ (When Online)                    ▼ (Local Storage)
+    API Server                     AsyncStorage
+    • HTTP/HTTPS                   • Encrypted queue
+    • JWT Auth                      • Auto-delete after sync
+    • Retry logic                   • Persistent until sent
+    • Batch uploads
+
+
+SYNC PROCESS:
+1. User fills form (saves to local DB)
+2. User submits (queued for sync)
+3. Network check:
+   ├─ Online → Send immediately
+   └─ Offline → Store & wait
+4. When online again:
+   ├─ Background sync starts
+   ├─ Retry failed items (exponential backoff)
+   ├─ Mark successful items as synced
+   └─ Notify user of status
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 📞 INTEGRATION POINTS
+
+```
+EXTERNAL INTEGRATIONS:
+
+1. EHR/Hospital Systems
+   ├─ Epic Systems
+   │  └─ HL7 FHIR API integration
+   ├─ Cerner
+   │  └─ SOAP/REST API
+   ├─ Medidata
+   │  └─ Custom XML interface
+   └─ Generic HL7 v2.5
+
+2. Mapping & Location Services
+   ├─ Mapbox GL
+   │  └─ Real-time traffic layers
+   ├─ Google Maps Platform
+   │  └─ Directions API
+   └─ OpenStreetMap
+      └─ Offline maps
+
+3. Communication Services
+   ├─ Twilio
+   │  └─ SMS notifications
+   ├─ Firebase Cloud Messaging
+   │  └─ Push notifications
+   ├─ SendGrid
+   │  └─ Email alerts
+   └─ Nexmo
+      └─ Voice notifications
+
+4. Analytics & Monitoring
+   ├─ Datadog
+   │  └─ Application monitoring
+   ├─ New Relic
+   │  └─ Performance analytics
+   ├─ Sentry
+   │  └─ Error tracking
+   └─ Mixpanel
+      └─ User analytics
+
+5. Cloud Infrastructure
+   ├─ AWS Services
+   │  ├─ ECS (container orchestration)
+   │  ├─ RDS (managed PostgreSQL)
+   │  ├─ ElastiCache (Redis)
+   │  ├─ S3 (backup storage)
+   │  ├─ KMS (key management)
+   │  ├─ CloudFront (CDN)
+   │  └─ CloudWatch (monitoring)
+   │
+   └─ Azure Services
+      ├─ ACI (container instances)
+      ├─ Database for PostgreSQL
+      ├─ Azure Cache for Redis
+      ├─ Blob Storage
+      ├─ Key Vault
+      └─ App Insights
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 📊 MONITORING & OBSERVABILITY
+
+```
+METRICS COLLECTION:
+
+Application Metrics:
+├─ Request Rate (requests/second)
+├─ Response Time (P50, P95, P99)
+├─ Error Rate (5xx, 4xx, timeouts)
+├─ API Endpoint Performance
+├─ Database Query Time
+├─ Cache Hit Ratio
+├─ Queue Depth
+└─ WebSocket Connections
+
+Infrastructure Metrics:
+├─ CPU Utilization (target: < 70%)
+├─ Memory Usage (target: < 80%)
+├─ Disk Space (target: > 20% free)
+├─ Network I/O
+├─ Container Count
+├─ Pod Restarts
+├─ Node Health
+└─ Cluster Capacity
+
+Business Metrics:
+├─ Patients Processed (daily)
+├─ Alerts Generated (daily)
+├─ Response Time (seconds)
+├─ System Uptime (target: 99.9%)
+├─ Alert Acknowledgment Time
+├─ Hospital Adoption Rate
+└─ User Satisfaction Score
+
+ALERTING RULES:
+├─ High Error Rate (> 5%)
+├─ API Response Time > 1 second
+├─ Database Response Time > 100ms
+├─ Cache Miss Rate > 50%
+├─ CPU Usage > 85%
+├─ Memory Usage > 90%
+├─ Disk Space < 10%
+├─ WebSocket Disconnect Rate > 10%
+└─ Zero Alerts in 4 hours (anomaly)
+
+DASHBOARDS:
+├─ System Health (real-time)
+├─ Application Performance
+├─ Database Performance
+├─ User Activity
+├─ Error Tracking
+├─ Business Metrics
+├─ Infrastructure
+└─ Security Events
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+This architectural documentation provides a complete technical reference for:
+- System design and components
+- Data flow and processing
+- Database structure
+- Security implementation
+- AI/ML integration
+- Deployment topology
+- Mobile architecture
+- External integrations
+- Monitoring strategy
+
+All components work together to create a secure, scalable, HIPAA-compliant
+emergency healthcare communication platform.

@@ -1,0 +1,306 @@
+# BACKEND DEPENDENCIES
+# File: requirements.txt
+# Python packages for AmbuLink AI backend
+
+# Core Framework
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-JWT-Extended==4.4.6
+Flask-CORS==4.0.0
+Flask-SocketIO==5.3.4
+
+# Database
+SQLAlchemy==2.0.21
+psycopg2-binary==2.9.7
+alembic==1.12.0
+
+# Real-time Communication
+python-socketio==5.9.0
+python-engineio==4.7.1
+python-dotenv==1.0.0
+
+# ML/AI
+scikit-learn==1.3.1
+numpy==1.24.3
+pandas==2.0.3
+joblib==1.3.1
+spacy==3.6.1
+
+# NLP for clinical text
+nltk==3.8.1
+transformers==4.32.1
+
+# Security & Encryption
+cryptography==41.0.3
+PyJWT==2.8.0
+werkzeug==2.3.7
+bcrypt==4.0.1
+
+# API & Requests
+requests==2.31.0
+axios==1.5.0
+
+# HTTP & Web
+gunicorn==21.2.0
+Werkzeug==2.3.7
+
+# Monitoring & Logging
+python-json-logger==2.0.7
+sentry-sdk==1.32.0
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+pytest-flask==1.2.0
+responses==0.23.3
+
+# Code Quality
+flake8==6.1.0
+black==23.9.1
+isort==5.12.0
+pylint==2.17.5
+
+# Development
+ipython==8.15.0
+ipdb==0.13.13
+flask-debug==1.0
+
+---
+
+# FRONTEND DEPENDENCIES
+# File: frontend/package.json
+
+{
+  "name": "ambulink-ai-dashboard",
+  "version": "1.0.0",
+  "description": "Real-time emergency healthcare communication dashboard",
+  "main": "index.js",
+  "homepage": "/",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "axios": "^1.5.0",
+    "socket.io-client": "^4.7.2",
+    "react-map-gl": "^7.1.5",
+    "mapbox-gl": "^2.15.0",
+    "react-icons": "^4.12.0",
+    "recharts": "^2.10.3",
+    "date-fns": "^2.30.0",
+    "dotenv": "^16.3.1",
+    "js-cookie": "^3.0.5",
+    "uuid": "^9.0.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.1.0",
+    "vite": "^4.5.0",
+    "eslint": "^8.50.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.3",
+    "testing-library-react": "^14.1.0",
+    "testing-library-jest-dom": "^6.1.4",
+    "vitest": "^0.34.6"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .js,.jsx",
+    "format": "prettier --write src",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
+}
+
+---
+
+# MOBILE APP DEPENDENCIES
+# File: mobile/package.json
+
+{
+  "name": "ambulink-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "18.2.0",
+    "react-native": "0.72.4",
+    "@react-native-async-storage/async-storage": "^1.19.3",
+    "@react-native-community/netinfo": "^11.0.3",
+    "@react-native-camera/camera": "^4.2.1",
+    "react-native-geolocation-service": "^5.3.1",
+    "react-native-maps": "^1.4.0",
+    "react-native-vector-icons": "^10.0.0",
+    "axios": "^1.5.0",
+    "socket.io-client": "^4.7.2",
+    "@react-navigation/native": "^6.1.7",
+    "@react-navigation/bottom-tabs": "^6.5.7",
+    "react-native-screens": "^3.27.0",
+    "react-native-safe-area-context": "^4.7.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.2",
+    "@babel/preset-env": "^7.23.2",
+    "@babel/preset-react": "^7.23.2",
+    "@babel/preset-typescript": "^7.23.2",
+    "babel-jest": "^29.7.0",
+    "@testing-library/react-native": "^12.2.3",
+    "jest": "^29.7.0"
+  },
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "test": "jest",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx"
+  }
+}
+
+---
+
+# DOCKER CONFIGURATION
+# File: Dockerfile (Backend)
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Set environment variables
+ENV FLASK_APP=ambulink/app.py
+ENV PYTHONUNBUFFERED=1
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5000/health')"
+
+# Run application
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "--worker-class", "geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "ambulink.app:app"]
+
+---
+
+# File: Dockerfile (Frontend)
+
+FROM node:18-alpine as build
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm ci
+
+COPY . .
+
+RUN npm run build
+
+# Production stage
+FROM nginx:alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
+
+---
+
+# File: docker-compose.yml
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ambulink_postgres
+    environment:
+      POSTGRES_USER: ambulink
+      POSTGRES_PASSWORD: ambulink_secure_password
+      POSTGRES_DB: ambulink_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ambulink"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ambulink_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ambulink_backend
+    environment:
+      DATABASE_URL: postgresql://ambulink:ambulink_secure_password@postgres:5432/ambulink_db
+      REDIS_URL: redis://redis:6379
+      FLASK_ENV: development
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      HIPAA_MODE: strict
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: flask run --host=0.0.0.0
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ambulink_frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      REACT_APP_API_URL: http://localhost:5000
+      REACT_APP_MAPBOX_TOKEN: ${MAPBOX_TOKEN}
+
+volumes:
+  postgres_data:
+  redis_data:
